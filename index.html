@@ -52,6 +52,13 @@
       color: #2E7D32;
     }
 
+    #login-count {
+      font-weight: bold;
+      color: #01579B;
+      margin-top: 5px;
+      font-size: 1rem;
+    }
+
     #overlay {
       position: fixed;
       top: 0;
@@ -78,6 +85,7 @@
   <div id="reader"></div>
   <div id="school-name">🏫 Pulong Buhangin National High School</div>
   <p id="status">Status: Waiting for scan...</p>
+  <p id="login-count">Total Login: 0/34</p>
   <div id="overlay">✅ SCAN COMPLETE</div>
   <audio id="beep" src="https://www.soundjay.com/button/beep-07.wav" preload="auto"></audio>
   <h4>by marcelo</h4>
@@ -96,11 +104,13 @@
         body: JSON.stringify(data),
       })
       .then(res => res.text())
-      .then(() => {
+      .then(responseText => {
         document.getElementById("status").innerText = "✅ Attendance Logged!";
+        document.getElementById("login-count").innerText = "Total Login: " + responseText;
       })
       .catch(() => {
         document.getElementById("status").innerText = "❌ Failed to log.";
+        document.getElementById("login-count").innerText = "Total Login: --";
       });
     }
 
