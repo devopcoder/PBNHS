@@ -1,158 +1,65 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>📷 Student Attendance - Sec 5</title>
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      text-align: center;
-      background: linear-gradient(to bottom, #B3E5FC 0%, #E1F5FE 50%, #FFFFFF 100%);
-      color: #003366;
-    }
+<script>
+  const sheetURL = "https://script.google.com/macros/s/AKfycbxu2D_ckD2x9X_B-K6icNKdlzrPcWiFOCTwbTPwsxLlXpW_r0etStf3bDBZF-tE9_uu/exec";
+  const beepSound = document.getElementById("beep");
+  const overlay = document.getElementById("overlay");
 
-    h2 {
-      margin-top: 30px;
-      font-size: 2rem;
-      color: #C62828;
-      background: #FFE082;
-      display: inline-block;
-      padding: 10px 20px;
-      border-radius: 12px;
-      box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
-    }
+  let scanner = new Html5Qrcode("reader");
+  let isScanning = true;
 
-    h4 {
-      color: #37474F;
-      margin-top: 40px;
-    }
-
-    #reader {
-      margin: 20px auto;
-      width: 300px;
-      z-index: 1;
-    }
-
-    #school-name {
-      font-size: 1.8rem;
-      font-weight: bold;
-      color: #0D47A1;
-      margin-top: 15px;
-      background: #FFCDD2;
-      padding: 8px 16px;
-      border-radius: 12px;
-      display: inline-block;
-      box-shadow: 1px 1px 4px rgba(0,0,0,0.1);
-    }
-
-    #status {
-      margin-top: 10px;
-      font-weight: bold;
-      color: #2E7D32;
-    }
-
-    #login-count {
-      margin-top: 5px;
-      font-weight: bold;
-      color: #1976D2;
-    }
-
-    #overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background-color: rgba(0, 0, 0, 0.8);
-      color: #FFD54F;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2rem;
-      z-index: 999;
-      visibility: hidden;
-    }
-
-    #overlay.show {
-      visibility: visible;
-    }
-  </style>
-</head>
-<body>
-  <h2>📷 Welcome to PBNHS Attendance</h2>
-  <div id="reader"></div>
-  <div id="school-name">🏫 Pulong Buhangin National High School</div>
-  <p id="status">Status: Waiting for scan...</p>
-  <p id="login-count">Total Login: 0/34</p>
-  <div id="overlay">✅ SCAN COMPLETE</div>
-  <audio id="beep" src="https://www.soundjay.com/button/beep-07.wav" preload="auto"></audio>
-  <h4>by marcelo</h4>
-
-  <script>
-    const sheetURL = "https://script.google.com/macros/s/AKfycbza0xB9WLmsPfIDLeFOabT_9KVKEEgbfEETukrd6e5PwFrok5_EKpqD-P5z0Oe9N7l0/exec";
-    const beepSound = document.getElementById("beep");
-    const overlay = document.getElementById("overlay");
-
-    let scanner = new Html5Qrcode("reader");
-    let isScanning = true;
-
-    function sendToGoogleSheet(data) {
-      fetch(sheetURL, {
-        method: "POST",
-        body: JSON.stringify(data),
-      })
-      .then(res => res.text())
-      .then(responseText => {
-        document.getElementById("status").innerText = "✅ Attendance Logged!";
-        document.getElementById("login-count").innerText = "Total Login: " + responseText;
-      })
-      .catch(() => {
-        document.getElementById("status").innerText = "❌ Failed to log.";
-        document.getElementById("login-count").innerText = "Total Login: --";
-      });
-    }
-
-    function showOverlay() {
-      overlay.classList.add("show");
-      setTimeout(() => {
-        overlay.classList.remove("show");
-      }, 1500);
-    }
-
-    function onScanSuccess(decodedText) {
-      if (!isScanning) return;
-
-      isScanning = false;
-      try {
-        const parsed = JSON.parse(decodedText);
-        document.getElementById("status").innerText = `📤 Logging: ${parsed.name}`;
-        sendToGoogleSheet(parsed);
-        beepSound.play();
-        showOverlay();
-      } catch (e) {
-        document.getElementById("status").innerText = "❌ Invalid QR Code!";
-      }
-
-      scanner.pause();
-      setTimeout(() => {
-        document.getElementById("status").innerText = "✅ Ready for next scan";
-        scanner.resume(onScanSuccess);
-        isScanning = true;
-      }, 2000);
-    }
-
-    Html5Qrcode.getCameras().then(cameras => {
-      if (cameras && cameras.length) {
-        scanner.start(
-          cameras[0].id,
-          { fps: 10, qrbox: 250 },
-          onScanSuccess
-        );
-      }
-    }).catch(err => {
-      document.getElementById("status").innerText = "❌ Camera Error!";
+  function sendToGoogleSheet(data) {
+    fetch(sheetURL, {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+    .then(res => res.text())
+    .then(responseText => {
+      document.getElementById("status").innerText = "✅ Attendance Logged!";
+      document.getElementById("login-count").innerText = "Total Login: " + responseText;
+    })
+    .catch(() => {
+      document.getElementById("status").innerText = "❌ Failed to log.";
+      document.getElementById("login-count").innerText = "Total Login: --";
     });
-  </script>
-</body>
-</html>
+  }
+
+  function showOverlay() {
+    overlay.classList.add("show");
+    setTimeout(() => {
+      overlay.classList.remove("show");
+    }, 1500);
+  }
+
+  function onScanSuccess(decodedText) {
+    if (!isScanning) return;
+
+    isScanning = false;
+    try {
+      const parsed = JSON.parse(decodedText);
+      document.getElementById("status").innerText = `📤 Logging: ${parsed.name}`;
+      sendToGoogleSheet(parsed);
+      beepSound.play();
+      showOverlay();
+    } catch (e) {
+      document.getElementById("status").innerText = "❌ Invalid QR Code!";
+    }
+
+    scanner.pause();
+    setTimeout(() => {
+      document.getElementById("status").innerText = "✅ Ready for next scan";
+      scanner.resume(onScanSuccess);
+      isScanning = true;
+    }, 2000);
+  }
+
+  Html5Qrcode.getCameras().then(cameras => {
+    if (cameras && cameras.length) {
+      scanner.start(
+        cameras[0].id,
+        { fps: 10, qrbox: 250 },
+        onScanSuccess
+      );
+    }
+  }).catch(err => {
+    document.getElementById("status").innerText = "❌ Camera Error!";
+  });
+</script>
