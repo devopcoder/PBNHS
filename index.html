@@ -104,8 +104,13 @@
       })
       .then(res => res.text())
       .then(responseText => {
-        document.getElementById("status").innerText = "✅ Attendance Logged!";
-        document.getElementById("login-count").innerText = "Total Login: " + responseText;
+        if (responseText === "Already scanned") {
+          document.getElementById("status").innerText = "⛔️ Already scanned today!";
+          document.getElementById("login-count").innerText = "Total Login: --";
+        } else {
+          document.getElementById("status").innerText = "✅ Attendance Logged!";
+          document.getElementById("login-count").innerText = "Total Login: " + responseText;
+        }
       })
       .catch(() => {
         document.getElementById("status").innerText = "❌ Failed to log.";
