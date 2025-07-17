@@ -1,113 +1,152 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>📷 Attendance Scanner</title>
-  <script src="https://unpkg.com/html5-qrcode"></script>
+  <title>📷 Student Attendance - Sec 5</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background: linear-gradient(to bottom right, #a6c1ee, #fbc2eb);
       margin: 0;
-      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      background: linear-gradient(to bottom, #B3E5FC 0%, #E1F5FE 50%, #FFFFFF 100%);
+      color: #003366;
     }
-    h2 { margin-top: 20px; }
+
+    h2 {
+      margin-top: 30px;
+      font-size: 2rem;
+      color: #C62828;
+      background: #FFE082;
+      display: inline-block;
+      padding: 10px 20px;
+      border-radius: 12px;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+    }
+
+    h4 {
+      color: #37474F;
+      margin-top: 40px;
+    }
+
     #reader {
-      width: 300px;
       margin: 20px auto;
-      border: 3px solid #444;
-      border-radius: 10px;
+      width: 300px;
+      z-index: 1;
     }
-    .status-box {
-      margin-top: 20px;
-      padding: 15px;
-      background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    }
-    .scan-count {
-      font-size: 20px;
+
+    #school-name {
+      font-size: 1.8rem;
       font-weight: bold;
-      color: #333;
+      color: #0D47A1;
+      margin-top: 15px;
+      background: #FFCDD2;
+      padding: 8px 16px;
+      border-radius: 12px;
+      display: inline-block;
+      box-shadow: 1px 1px 4px rgba(0,0,0,0.1);
     }
-    .pause {
+
+    #status {
       margin-top: 10px;
-      color: #888;
-      font-size: 14px;
+      font-weight: bold;
+      color: #2E7D32;
+    }
+
+    #overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.8);
+      color: #FFD54F;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      z-index: 999;
+      visibility: hidden;
+    }
+
+    #overlay.show {
+      visibility: visible;
     }
   </style>
 </head>
 <body>
-  <h2>📷 QR Attendance Scanner</h2>
-
+  <h2>📷 Welcome to PBNHS Attendance</h2>
   <div id="reader"></div>
-
-  <div class="status-box">
-    <div id="studentInfo">Waiting for scan...</div>
-    <div class="scan-count" id="scanCount"></div>
-    <div class="pause" id="pauseMsg" style="display: none;">⏸️ Scanning paused for 4 seconds...</div>
-  </div>
+  <div id="school-name">🏫 Pulong Buhangin National High School</div>
+  <p id="status">Status: Waiting for scan...</p>
+  <div id="overlay">✅ SCAN COMPLETE</div>
+  <audio id="beep" src="https://www.soundjay.com/button/beep-07.wav" preload="auto"></audio>
+  <h4>by marcelo</h4>
 
   <script>
-    const reader = new Html5Qrcode("reader");
-    let scanning = true;
+    const sheetURL = "https://script.google.com/macros/s/AKfycbxu2D_ckD2x9X_B-K6icNKdlzrPcWiFOCTwbTPwsxLlXpW_r0etStf3bDBZF-tE9_uu/exec";
+    const beepSound = document.getElementById("beep");
+    const overlay = document.getElementById("overlay");
 
-    function showPauseMessage(show) {
-      document.getElementById("pauseMsg").style.display = show ? "block" : "none";
+    let scanner = new Html5Qrcode("reader");
+    let isScanning = true;
+
+    function sendToGoogleSheet(data) {
+      fetch(sheetURL, {
+        method: "POST",
+        body: JSON.stringify(data),
+      })
+      .then(res => res.text())
+      .then((resText) => {
+        document.getElementById("status").innerText = "✅ Attendance Logged! " + resText;
+      })
+      .catch(() => {
+        document.getElementById("status").innerText = "❌ Failed to log.";
+      });
     }
 
-    function startScanner() {
-      reader.start(
-        { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: 250
-        },
-        (decodedText) => {
-          if (!scanning) return;
-
-          scanning = false;
-          showPauseMessage(true);
-
-          try {
-            const json = JSON.parse(decodedText);
-            const payload = {
-              name: json.name,
-              section: json.section
-            };
-
-            fetch('https://script.google.com/macros/s/AKfycbxu2D_ckD2x9X_B-K6icNKdlzrPcWiFOCTwbTPwsxLlXpW_r0etStf3bDBZF-tE9_uu/exec', {
-              method: 'POST',
-              body: JSON.stringify(payload)
-            })
-            .then(response => response.text())
-            .then(data => {
-              document.getElementById("studentInfo").innerHTML =
-                `<strong>${payload.name}</strong><br>Section: ${payload.section}`;
-              document.getElementById("scanCount").innerText = `Total Scan: ${data}`;
-            })
-            .catch(error => {
-              document.getElementById("studentInfo").innerText = "❌ Scan failed.";
-              console.error(error);
-            });
-
-          } catch (e) {
-            document.getElementById("studentInfo").innerText = "⚠️ Invalid QR code";
-          }
-
-          // 4-second pause before scanning again
-          setTimeout(() => {
-            scanning = true;
-            showPauseMessage(false);
-          }, 4000);
-        },
-        (errorMessage) => {
-          // ignore scan errors
-        }
-      );
+    function showOverlay() {
+      overlay.classList.add("show");
+      setTimeout(() => {
+        overlay.classList.remove("show");
+      }, 1500);
     }
 
-    startScanner();
+    function onScanSuccess(decodedText) {
+      if (!isScanning) return;
+
+      isScanning = false;
+      try {
+        const parsed = JSON.parse(decodedText);
+        document.getElementById("status").innerText = `📤 Logging: ${parsed.name}`;
+        sendToGoogleSheet(parsed);
+        beepSound.play();
+        showOverlay();
+      } catch (e) {
+        document.getElementById("status").innerText = "❌ Invalid QR Code!";
+      }
+
+      scanner.pause();
+      setTimeout(() => {
+        document.getElementById("status").innerText = "✅ Ready for next scan";
+        scanner.resume(onScanSuccess);
+        isScanning = true;
+      }, 4000); // ⏱️ 4 second delay
+    }
+
+    Html5Qrcode.getCameras().then(cameras => {
+      if (cameras.length > 0) {
+        const frontCamera = cameras.find(c => c.label.toLowerCase().includes('front')) || cameras[0];
+        scanner.start(
+          frontCamera.id,
+          { fps: 10, qrbox: 250 },
+          onScanSuccess
+        );
+      } else {
+        document.getElementById("status").innerText = "❌ No camera found.";
+      }
+    }).catch(err => {
+      document.getElementById("status").innerText = "❌ Camera Error!";
+    });
   </script>
 </body>
 </html>
