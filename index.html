@@ -79,7 +79,10 @@
   <div id="school-name">🏫 Pulong Buhangin National High School</div>
   <p id="status">Status: Waiting for scan...</p>
   <div id="overlay">✅ SCAN COMPLETE</div>
-  <audio id="beep" src="https://www.soundjay.com/button/beep-07.wav" preload="auto"></audio>
+
+  <!-- ✅ LOCAL SYSTEM SOUND FILE -->
+  <audio id="beep" src="beep-07.wav" preload="auto"></audio>
+
   <h4>by marcelo</h4>
 
   <script>
@@ -130,7 +133,7 @@
         document.getElementById("status").innerText = "✅ Ready for next scan";
         scanner.resume(onScanSuccess);
         isScanning = true;
-      }, 4000); // ⏱️ 4 second delay
+      }, 4000);
     }
 
     Html5Qrcode.getCameras().then(cameras => {
