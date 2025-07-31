@@ -23,15 +23,9 @@
       box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
     }
 
-    h4 {
-      color: #37474F;
-      margin-top: 40px;
-    }
-
     #reader {
       margin: 20px auto;
       width: 300px;
-      z-index: 1;
     }
 
     #school-name {
@@ -71,26 +65,63 @@
     #overlay.show {
       visibility: visible;
     }
+
+    #controls {
+      margin-top: 20px;
+    }
+
+    #log-count {
+      margin-top: 20px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #C2185B;
+    }
+
+    #photo {
+      margin-top: 20px;
+      width: 200px;
+      border-radius: 12px;
+      box-shadow: 0 0 5px gray;
+    }
+
+    button {
+      background: #1565C0;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
   <h2>📷 Welcome to PBNHS Attendance</h2>
   <div id="reader"></div>
+  <div id="controls">
+    <button onclick="switchCamera()">🔄 Switch Camera</button>
+  </div>
   <div id="school-name">🏫 Pulong Buhangin National High School</div>
   <p id="status">Status: Waiting for scan...</p>
+  <img id="photo" src="https://raw.githubusercontent.com/opcodergithub/pbnhs/main/1000164574.jpg" style="display:none;" />
+  <p id="log-count">Log: 0/34</p>
   <div id="overlay">✅ SCAN COMPLETE</div>
-
-  <!-- ✅ LOCAL SYSTEM SOUND FILE -->
   <audio id="beep" src="beep-07.wav" preload="auto"></audio>
-
   <h4>by marcelo</h4>
 
   <script>
     const sheetURL = "https://script.google.com/macros/s/AKfycbxu2D_ckD2x9X_B-K6icNKdlzrPcWiFOCTwbTPwsxLlXpW_r0etStf3bDBZF-tE9_uu/exec";
     const beepSound = document.getElementById("beep");
     const overlay = document.getElementById("overlay");
+    const photo = document.getElementById("photo");
+    const logCountEl = document.getElementById("log-count");
+    let currentCameraIndex = 0;
+    let allCameras = [];
+    let logCount = 0;
+    const totalLogs = 34;
 
-    let scanner = new Html5Qrcode("reader");
+    const scanner = new Html5Qrcode("reader");
     let isScanning = true;
 
     function sendToGoogleSheet(data) {
@@ -101,6 +132,8 @@
       .then(res => res.text())
       .then((resText) => {
         document.getElementById("status").innerText = "✅ Attendance Logged! " + resText;
+        logCount++;
+        logCountEl.innerText = `Log: ${logCount}/${totalLogs}`;
       })
       .catch(() => {
         document.getElementById("status").innerText = "❌ Failed to log.";
@@ -116,14 +149,15 @@
 
     function onScanSuccess(decodedText) {
       if (!isScanning) return;
-
       isScanning = false;
+
       try {
         const parsed = JSON.parse(decodedText);
         document.getElementById("status").innerText = `📤 Logging: ${parsed.name}`;
         sendToGoogleSheet(parsed);
         beepSound.play();
         showOverlay();
+        photo.style.display = "block"; // Show picture on scan
       } catch (e) {
         document.getElementById("status").innerText = "❌ Invalid QR Code!";
       }
@@ -131,19 +165,22 @@
       scanner.pause();
       setTimeout(() => {
         document.getElementById("status").innerText = "✅ Ready for next scan";
-        scanner.resume(onScanSuccess);
+        scanner.resume(allCameras[currentCameraIndex].id, { fps: 10, qrbox: 250 }, onScanSuccess);
         isScanning = true;
       }, 4000);
     }
 
+    function switchCamera() {
+      currentCameraIndex = (currentCameraIndex + 1) % allCameras.length;
+      scanner.stop().then(() => {
+        scanner.start(allCameras[currentCameraIndex].id, { fps: 10, qrbox: 250 }, onScanSuccess);
+      });
+    }
+
     Html5Qrcode.getCameras().then(cameras => {
       if (cameras.length > 0) {
-        const frontCamera = cameras.find(c => c.label.toLowerCase().includes('front')) || cameras[0];
-        scanner.start(
-          frontCamera.id,
-          { fps: 10, qrbox: 250 },
-          onScanSuccess
-        );
+        allCameras = cameras;
+        scanner.start(cameras[currentCameraIndex].id, { fps: 10, qrbox: 250 }, onScanSuccess);
       } else {
         document.getElementById("status").innerText = "❌ No camera found.";
       }
