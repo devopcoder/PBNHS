@@ -118,11 +118,10 @@
     const logCountEl = document.getElementById("log-count");
     let currentCameraIndex = 0;
     let allCameras = [];
-    let logCount = 0;
     const totalLogs = 34;
+    let isScanning = true;
 
     const scanner = new Html5Qrcode("reader");
-    let isScanning = true;
 
     function sendToGoogleSheet(data) {
       fetch(sheetURL, {
@@ -132,8 +131,7 @@
       .then(res => res.text())
       .then((resText) => {
         document.getElementById("status").innerText = "✅ Attendance Logged! " + resText;
-        logCount++;
-        logCountEl.innerText = `Log: ${logCount}/${totalLogs}`;
+        updateLogCount();
       })
       .catch(() => {
         document.getElementById("status").innerText = "❌ Failed to log.";
@@ -157,7 +155,7 @@
         sendToGoogleSheet(parsed);
         beepSound.play();
         showOverlay();
-        photo.style.display = "block"; // Show picture on scan
+        photo.style.display = "block";
       } catch (e) {
         document.getElementById("status").innerText = "❌ Invalid QR Code!";
       }
@@ -177,10 +175,21 @@
       });
     }
 
+    function updateLogCount() {
+        .then(res => res.text())
+        .then(count => {
+          logCountEl.innerText = `Log: ${count}/${totalLogs}`;
+        })
+        .catch(() => {
+          logCountEl.innerText = `Log: ?/${totalLogs}`;
+        });
+    }
+
     Html5Qrcode.getCameras().then(cameras => {
       if (cameras.length > 0) {
         allCameras = cameras;
         scanner.start(cameras[currentCameraIndex].id, { fps: 10, qrbox: 250 }, onScanSuccess);
+        updateLogCount(); // Initial count on load
       } else {
         document.getElementById("status").innerText = "❌ No camera found.";
       }
