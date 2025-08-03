@@ -112,21 +112,24 @@
     let cameras = [];
 
     function sendToGoogleSheet(data) {
-      fetch(sheetURL, {
-        method: "POST",
-        headers:{
-          "Content-type": application/json"
-        },
-        body: JSON.stringify(data),
-      })
-      .then(res => res.text())
-      .then((resText) => {
-        document.getElementById("status").innerText = "✅ Attendance Logged! " + resText;
-      })
-      .catch(() => {
-        document.getElementById("status").innerText = "❌ Failed to log.";
-      });
-    }
+      
+  fetch(sheetURL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"   // ✅ this is required
+    },
+    body: JSON.stringify(data),
+  })
+  .then(res => res.text())
+  .then((resText) => {
+    document.getElementById("status").innerText = "✅ Attendance Logged! " + resText;
+  })
+  .catch((err) => {
+    document.getElementById("status").innerText = "❌ Failed to log.";
+    console.error("Logging error:", err);
+  });
+}
+
 
     function showOverlay() {
       overlay.classList.add("show");
