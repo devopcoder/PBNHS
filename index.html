@@ -114,6 +114,9 @@
     function sendToGoogleSheet(data) {
       fetch(sheetURL, {
         method: "POST",
+        headers:{
+          "Content-type": application/json"
+        },
         body: JSON.stringify(data),
       })
       .then(res => res.text())
