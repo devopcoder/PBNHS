@@ -112,7 +112,7 @@
     let cameras = [];
 
     function sendToGoogleSheet(data) {
-      fetch(sheetURL, {
+      fetch("https://script.google.com/macros/s/AKfycbwEPd1tybx4XTb_kCTo-uFdp5PmjVqEM5cCeEbqmXvnf6gcNCkdsal7Jqr-tRga3BP1/exec", {
         method: "POST",
         headers: {
           "Content-Type": "application/json" // ✅ IMPORTANT!
