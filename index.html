@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>📷 Student Attendance </title>
+  <title>📷 Student Attendance</title>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     body {
@@ -95,13 +95,13 @@
   <div id="school-name">🏫 Pulong Buhangin National High School</div>
   <p id="status">Status: Waiting for scan...</p>
   <button id="switch-btn">🔄 Switch Camera</button>
-  <div id="overlay">✅ SCAN COMPLETE </div>
+  <div id="overlay">✅ SCAN COMPLETE</div>
 
   <audio id="beep" src="beep-07.wav" preload="auto"></audio>
-  <h4>BY MARCELO CSS </h4>
+  <h4>BY MARCELO CSS</h4>
 
   <script>
-    const sheetURL = "https://script.google.com/macros/s/AKfycbwEPd1tybx4XTb_kCTo-uFdp5PmjVqEM5cCeEbqmXvnf6gcNCkdsal7Jqr-tRga3BP1/exec"; 
+    const sheetURL = "https://script.google.com/macros/s/AKfycbwEPd1tybx4XTb_kCTo-uFdp5PmjVqEM5cCeEbqmXvnf6gcNCkdsal7Jqr-tRga3BP1/exec";
     const beepSound = document.getElementById("beep");
     const overlay = document.getElementById("overlay");
     const switchBtn = document.getElementById("switch-btn");
@@ -112,24 +112,22 @@
     let cameras = [];
 
     function sendToGoogleSheet(data) {
-      
-  fetch(sheetURL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"   // ✅ this is required
-    },
-    body: JSON.stringify(data),
-  })
-  .then(res => res.text())
-  .then((resText) => {
-    document.getElementById("status").innerText = "✅ Attendance Logged! " + resText;
-  })
-  .catch((err) => {
-    document.getElementById("status").innerText = "❌ Failed to log.";
-    console.error("Logging error:", err);
-  });
-}
-
+      fetch(sheetURL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json" // ✅ IMPORTANT!
+        },
+        body: JSON.stringify(data),
+      })
+      .then(res => res.text())
+      .then((resText) => {
+        document.getElementById("status").innerText = "✅ Attendance Logged! " + resText;
+      })
+      .catch((err) => {
+        document.getElementById("status").innerText = "❌ Failed to log.";
+        console.error("Fetch error:", err);
+      });
+    }
 
     function showOverlay() {
       overlay.classList.add("show");
@@ -168,6 +166,7 @@
         onScanSuccess
       ).catch(err => {
         document.getElementById("status").innerText = "❌ Failed to start camera.";
+        console.error("Camera error:", err);
       });
     }
 
@@ -194,4 +193,4 @@
     });
   </script>
 </body>
-  
+</html>
