@@ -1,116 +1,190 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>QR Code Attendance</title>
-    <style>
-      body {
-        font-family: 'Segoe UI', sans-serif;
-        background: linear-gradient(120deg, #fdfbfb, #ebedee);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 30px;
+<head>
+  <title>📷 Student Attendance </title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      background: linear-gradient(to bottom, #B3E5FC 0%, #E1F5FE 50%, #FFFFFF 100%);
+      color: #003366;
+    }
+
+    h2 {
+      margin-top: 30px;
+      font-size: 2rem;
+      color: #C62828;
+      background: #FFE082;
+      display: inline-block;
+      padding: 10px 20px;
+      border-radius: 12px;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+    }
+
+    #reader {
+      margin: 20px auto;
+      width: 300px;
+      z-index: 1;
+    }
+
+    #school-name {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #0D47A1;
+      margin-top: 15px;
+      background: #FFCDD2;
+      padding: 8px 16px;
+      border-radius: 12px;
+      display: inline-block;
+      box-shadow: 1px 1px 4px rgba(0,0,0,0.1);
+    }
+
+    #status {
+      margin-top: 10px;
+      font-weight: bold;
+      color: #2E7D32;
+    }
+
+    #overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.8);
+      color: #FFD54F;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      z-index: 999;
+      visibility: hidden;
+    }
+
+    #overlay.show {
+      visibility: visible;
+    }
+
+    #switch-btn {
+      margin-top: 10px;
+      padding: 10px 15px;
+      background-color: #0288D1;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 1px 2px 4px rgba(0,0,0,0.2);
+    }
+
+    #switch-btn:hover {
+      background-color: #01579B;
+    }
+
+    h4 {
+      color: #37474F;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <h2>📷 Welcome to PBNHS Attendance</h2>
+  <div id="reader"></div>
+  <div id="school-name">🏫 Pulong Buhangin National High School</div>
+  <p id="status">Status: Waiting for scan...</p>
+  <button id="switch-btn">🔄 Switch Camera</button>
+  <div id="overlay">✅ SCAN COMPLETE </div>
+
+  <audio id="beep" src="beep-07.wav" preload="auto"></audio>
+  <h4>BY MARCELO CSS </h4>
+
+  <script>
+    const sheetURL = "https://script.google.com/macros/s/AKfycbwEPd1tybx4XTb_kCTo-uFdp5PmjVqEM5cCeEbqmXvnf6gcNCkdsal7Jqr-tRga3BP1/exec"; 
+    const beepSound = document.getElementById("beep");
+    const overlay = document.getElementById("overlay");
+    const switchBtn = document.getElementById("switch-btn");
+
+    let scanner = new Html5Qrcode("reader");
+    let isScanning = true;
+    let currentCameraIndex = 0;
+    let cameras = [];
+
+    function sendToGoogleSheet(data) {
+      fetch(sheetURL, {
+        method: "POST",
+        body: JSON.stringify(data),
+      })
+      .then(res => res.text())
+      .then((resText) => {
+        document.getElementById("status").innerText = "✅ Attendance Logged! " + resText;
+      })
+      .catch(() => {
+        document.getElementById("status").innerText = "❌ Failed to log.";
+      });
+    }
+
+    function showOverlay() {
+      overlay.classList.add("show");
+      setTimeout(() => {
+        overlay.classList.remove("show");
+      }, 1500);
+    }
+
+    function onScanSuccess(decodedText) {
+      if (!isScanning) return;
+
+      isScanning = false;
+      try {
+        const parsed = JSON.parse(decodedText);
+        document.getElementById("status").innerText = `📤 Logging: ${parsed.name}`;
+        sendToGoogleSheet(parsed);
+        beepSound.play();
+        showOverlay();
+      } catch (e) {
+        document.getElementById("status").innerText = "❌ Invalid QR Code!";
       }
 
-      h1 {
-        color: #333;
-        margin-bottom: 10px;
+      scanner.pause();
+      setTimeout(() => {
+        document.getElementById("status").innerText = "✅ Ready for next scan";
+        scanner.resume(cameras[currentCameraIndex].id, { fps: 20, qrbox: 250 }, onScanSuccess);
+        isScanning = true;
+      }, 4000);
+    }
+
+    function startCamera(index) {
+      currentCameraIndex = index;
+      scanner.start(
+        cameras[currentCameraIndex].id,
+        { fps: 20, qrbox: 250 },
+        onScanSuccess
+      ).catch(err => {
+        document.getElementById("status").innerText = "❌ Failed to start camera.";
+      });
+    }
+
+    Html5Qrcode.getCameras().then(devices => {
+      if (devices.length > 0) {
+        cameras = devices;
+        startCamera(0);
+      } else {
+        document.getElementById("status").innerText = "❌ No camera found.";
       }
+    }).catch(err => {
+      document.getElementById("status").innerText = "❌ Camera Error!";
+    });
 
-      #reader {
-        width: 90%;
-        max-width: 400px;
-        margin-top: 10px;
+    switchBtn.addEventListener("click", () => {
+      if (cameras.length > 1) {
+        scanner.stop().then(() => {
+          currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
+          startCamera(currentCameraIndex);
+        });
+      } else {
+        alert("Only one camera available.");
       }
-
-      #status {
-        margin-top: 15px;
-        font-size: 1.1em;
-        color: green;
-        font-weight: bold;
-      }
-
-      #switchCam {
-        margin-top: 10px;
-        padding: 8px 15px;
-        border: none;
-        border-radius: 8px;
-        background-color: #4CAF50;
-        color: white;
-        font-size: 14px;
-        cursor: pointer;
-      }
-
-      #switchCam:hover {
-        background-color: #45a049;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>📷 QR Code Attendance</h1>
-    <div id="reader"></div>
-    <button id="switchCam">Switch Camera</button>
-    <div id="status">Waiting for scan...</div>
-
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <script>
-      const scannerDiv = document.getElementById("reader");
-      const status = document.getElementById("status");
-      const switchCamBtn = document.getElementById("switchCam");
-
-      let cameraFacing = "environment"; // start with back camera
-      let scanner;
-
-      function beep() {
-        const audio = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
-        audio.play();
-      }
-
-      async function startScanner(facingMode) {
-        if (scanner) {
-          await scanner.stop().catch(() => {});
-        }
-
-        scanner = new Html5Qrcode("reader");
-        scanner.start(
-          { facingMode: facingMode },
-          {
-            fps: 10,
-            qrbox: 250
-          },
-          async (qrText) => {
-            beep();
-            status.textContent = "✅ Scanned: " + qrText;
-
-            try {
-              const json = JSON.parse(qrText);
-              const res = await fetch("https://script.google.com/macros/s/AKfycbwEPd1tybx4XTb_kCTo-uFdp5PmjVqEM5cCeEbqmXvnf6gcNCkdsal7Jqr-tRga3BP1/exec", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json"
-                },
-                body: JSON.stringify(json)
-              });
-              const result = await res.text();
-              status.textContent = result;
-            } catch (err) {
-              status.textContent = "❌ Invalid QR code.";
-            }
-
-            setTimeout(() => {
-              status.textContent = "Waiting for scan...";
-            }, 3000);
-          }
-        );
-      }
-
-      switchCamBtn.onclick = () => {
-        cameraFacing = cameraFacing === "environment" ? "user" : "environment";
-        startScanner(cameraFacing);
-      };
-
-      // Start scanner on load
-      startScanner(cameraFacing);
-    </script>
-  </body>
-</html>
+    });
+  </script>
+</body>
